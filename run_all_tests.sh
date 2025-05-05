@@ -12,5 +12,3 @@ python tools/theorem_validator.py
 
 echo "4. Checking convergence properties..."
 python tools/slice_scaling_key.py
-
-echo "All checks passed."

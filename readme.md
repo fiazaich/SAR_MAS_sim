@@ -13,24 +13,23 @@ used in the paper "Scoped Semantic Reasoning in Decentralized Agents: A Formal F
 1. **Run the simulation**:  
    ```bash
    cd working_rescue_sim_v4
-   python main.py
+   python -m main
    ```
    This generates logs in the `logs/` directory.
 
 2. **Verify deterministic properties**:  
    ```bash
-   python logs/theorem_analysis.py
+   python tools/theorem_analysis.py
    ```
    Expect:
    ```
    coherence_score = 1.0
    convergence_score = 1.0
-   isolation_score = 1.0
    ```
 
 3. **Verify bisimulation properties**:  
    ```bash
-   python logs/theorem_validator2.py
+   python tools/theorem_validator.py
    ```
    Expect:
    ```
@@ -42,14 +41,28 @@ used in the paper "Scoped Semantic Reasoning in Decentralized Agents: A Formal F
    bash run_all_tests.sh
    ```
 
+5. **Verify Geometric Tail Convergence**:
+   For each run to be plotted:
+   - set ```comm_prob``` in config/run_mode.json to desired message probability
+   - run the sim ```python -m main```
+   - run tools/mem_converge.py
+   Once all per-comm_prob analyses are run:
+   ```bash
+   python tools/plot_alignment_tails.py
+   ```
+   Note: running with higher ```comm_prob``` values induces little or no  message loss and, while the alignment curve is exponential, typically will have points rise above the bound due to violation of the i.i.d. message assumption.
+
 ## Directory Structure
-- `agents/` – agent implementations  
+- `agents/` – agent implementations 
+- `config/` - simulation configuration
+- `environment/` - world definition 
 - `memory/` – memory store modules  
 - `ontology/` – ontology definitions  
 - `simulation/` – runner and environment  
 - `logger/` – logging utilities  
 - `logs/` – output logs and analysis data  
-- `tests/` – placeholder for future unit tests  
+- `tests/` – debugging test scripts
+- `tools/` - all analysis and plotting tools   
 
 ## License
 MIT (or your preferred license)

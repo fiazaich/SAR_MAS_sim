@@ -14,17 +14,19 @@ from logger.logger import Logger
 from tools.theorem_validator import MemorySnapshotTracker
 from environment.world import GridWorld, set_world
 
+cfg = json.load(open("config/run_mode.json"))
 # tracker = None
 # global_store = GlobalMemoryStore("tools/ontology_access.json")
 global_store = None   # placeholder so name exists at module scope
 tracker       = None
-GRID_W, GRID_H = 10, 10          # tweak in config later
+GRID_W, GRID_H = cfg.get("world_w", 10), cfg.get("world_h", 10)          # tweak in config later
 WORLD = GridWorld(GRID_W, GRID_H)
 ONTO_PATH = os.path.join("logs", "ontology_access.json")
 set_world(WORLD)
-N_SEARCH = 10
-N_RESCUE = 40
-N_RELAY = 40
+N_SEARCH = cfg.get("n_search", 10)
+N_RESCUE = cfg.get("n_rescue", 10)
+N_RELAY = cfg.get("n_relay", 40)
+TICKS = cfg.get("duration", 100)
 
 def generate_fanout_slices(fan_out: float, seed: int = 42):
     """
@@ -88,10 +90,10 @@ async def main():
     seed    = cfg.get("seed",  42)
     comm_prob = cfg.get("comm_prob", 1.0) 
     base_agent.COMM_PROB = comm_prob
+    ticks = args.ticks or TICKS
 
     #add zones from gridworld
     
-
     # Set RNG seed for reproducibility
     random.seed(seed)
     if fan_out == 1.0:
@@ -168,7 +170,7 @@ async def main():
         assigned = zone_list[i*zones_per_agent : (i+1)*zones_per_agent]
         agent.assign_zones(assigned)
 
-    for tick in range(1, args.ticks + 1):
+    for tick in range(1, ticks + 1):
         print(f"\n--- TICK {tick} ---")
         if tick == 6:
             print("Simulating failure: rescue2 and relay1 disabled.")

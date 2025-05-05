@@ -5,13 +5,15 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams, rc
 import os
 
+cfg = json.load(open("config/run_mode.json"))
+
 # === CONFIG ===
 LOG_PATH = "logs/update_log.csv"
 LOCAL_MEMORIES_PATH = "logs/local_memories.json"
 OUTPUT_TRACE_PATH = "reconstructed_global_memory_trace_corrected.json"
 PLOT_PATH = "alignment_delay_tail_fixed.pdf"
 CSV_OUTPUT = "alignment_delays.csv"
-COMM_PROB = 0.8
+COMM_PROB = cfg.get("comm_prob", 1.0)
 
 def export_figure(filename="convergence.pdf"):
     # Physical size: fits 3.33-inch IEEE column
