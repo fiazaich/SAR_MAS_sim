@@ -1,1 +1,3 @@
-# No external dependencies
+matplotlib==3.10.1
+numpy==2.2.5
+pandas==2.2.3
