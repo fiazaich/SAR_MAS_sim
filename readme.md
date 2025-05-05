@@ -12,7 +12,7 @@ used in the paper "Semantic Fusion: Verifiable Decentralized Reasoning with Glob
 ## Quickstart
 1. **Run the simulation**:  
    ```bash
-   cd working_rescue_sim_v4
+   cd SAR_MAS_sim
    python -m main
    ```
    This generates logs in the `logs/` directory.
