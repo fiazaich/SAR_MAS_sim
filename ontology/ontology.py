@@ -3,11 +3,11 @@ import re
 class Ontology:
     def __init__(self):
         self.valid_keys = {
-            "Survivor": ["detected"],
+            "Survivor": ["detected", "none"],
             "Rescue": ["by_.*"],
             "Relay": ["active"],
             "ZoneStatus": ["searched", "unsearched"],
-            "Bid": [".+?:\d+(\.\d+)?"],
+            "Bid": [r".+?:-?\d+(\.\d+)?"],
             "ZoneCoord": ["\\d+,\\d+"],   # immutable seed
             "AgentPos":  ["\\d+,\\d+"]  
         }

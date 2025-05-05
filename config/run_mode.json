@@ -1,1 +1,9 @@
-{"comm_prob": 1.0, "fan_out": 0.25, "seed": 123}
+{"comm_prob": 1.0, 
+"fan_out": 1.0, 
+"seed": 123,
+"world_width": 10,
+"world_height": 10,
+"n_search": 10,
+"n_relay": 20,
+"n_rescue": 20,
+"duration": 100}

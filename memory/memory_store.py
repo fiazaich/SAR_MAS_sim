@@ -11,6 +11,11 @@ class LocalMemory:
         in_scope = self.slice.is_in_scope(key)
         validated = self.slice.validates(key, value)
         success = False
+        
+        if in_scope and not validated:
+            print(f"[VALIDATION FAIL] {self.agent_id} rejected {key}={value}")
+            print(f"  is_valid_key: {self.slice.ontology.is_valid_key(key)}")
+            print(f"  is_valid_value: {self.slice.ontology.is_valid_value(key, value)}")
 
         if validated:
             self.state[key] = value
