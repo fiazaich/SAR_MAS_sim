@@ -42,6 +42,7 @@ used in the paper "Scoped Semantic Reasoning in Decentralized Agents: A Formal F
    ```
 
 5. **Verify Geometric Tail Convergence**:
+
    For each run to be plotted:
    - set ```comm_prob``` in config/run_mode.json to desired message probability
    - run the sim ```python -m main```
