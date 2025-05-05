@@ -7,7 +7,7 @@ used in the paper "Semantic Fusion: Verifiable Decentralized Reasoning with Glob
 
 ## Requirements
 - Python 3.9 or higher
-- No external packages required; all dependencies are in the Python standard library.
+- See requirements.txt
 
 ## Quickstart
 1. **Run the simulation**:  
