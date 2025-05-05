@@ -23,8 +23,8 @@ WORLD = GridWorld(GRID_W, GRID_H)
 ONTO_PATH = os.path.join("logs", "ontology_access.json")
 set_world(WORLD)
 N_SEARCH = 10
-N_RESCUE = 20
-N_RELAY = 20
+N_RESCUE = 40
+N_RELAY = 40
 
 def generate_fanout_slices(fan_out: float, seed: int = 42):
     """
@@ -116,7 +116,7 @@ async def main():
         # rescue_slices and relay_slices are lists of OntologySlice
         all_allowed = [p for sl in (rescue_slices + relay_slices) for p in sl.allowed_prefixes]
         coverage = Counter(all_allowed)
-        print(f"[DEBUG SLICE] f={fan_out:.2f} slice coverage:", coverage)
+        #print(f"[DEBUG SLICE] f={fan_out:.2f} slice coverage:", coverage)
 
     search_agents = [SearchAgent(f"search{i+1}", search_slices[i], logger)
                      for i in range(N_SEARCH)]
@@ -137,13 +137,7 @@ async def main():
     
     global_store = GlobalMemoryStore(ONTO_PATH)
     tracker       = MemorySnapshotTracker(ONTO_PATH)
-    for zone in WORLD.zones:
-        c = WORLD.coord(zone)
-        key = f"ZoneCoord@{zone}"
-        val = f"{c.x},{c.y}"
-        global_store.add(key, val, 0, "system")
-        if logger:                               # emit to CSV so we can verify
-            await logger.log(0, "system", "seed", key, val)
+    
 
     # Zones to cover
     zone_list = WORLD.zones.copy()
@@ -155,6 +149,18 @@ async def main():
         agent.attach_memory(LocalMemory(agent.slice, logger, agent_id=agent.agent_id))
         agent.set_global_store(global_store)
     print(len(all_agents))
+
+    for zone in WORLD.zones:
+        c = WORLD.coord(zone)
+        key = f"ZoneCoord@{zone}"
+        val = f"{c.x},{c.y}"
+        global_store.add(key, val, 0, "system")
+        for agent in all_agents:
+            if agent.slice.is_in_scope(key):
+                agent.memory.validate_and_update(key, val, context={"tick": 0, "agent_id": "system"})
+
+        if logger:                               # emit to CSV so we can verify
+            await logger.log(0, "system", "seed", key, val)
 
     # Distribute zones across search agents
     zones_per_agent = math.ceil(len(zone_list) / len(search_agents))
@@ -209,6 +215,11 @@ async def main():
         json.dump(ontology_access, f, indent=2)
 
     global_store.save("logs/global_memories_canonical.json")
+    # Save true final global memory (used by convergence checker)
+    # with open("logs/memory_dump_global.json", "w") as f:
+    #     json.dump(global_store.memory, f, indent=2)
+    combined_global = global_store.memory
+    tracker.snapshot(all_agents, combined_global)
 
     logger.dump()
     tracker.save("logs")

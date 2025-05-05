@@ -1,140 +1,97 @@
-import os
 import json
-import csv
-from collections import defaultdict
-import matplotlib.pyplot as plt
+import os
+import pandas as pd
 
-# — Publication style —  
-plt.style.use('seaborn-v0_8-paper')
-plt.rc('font',      family='serif', size=10)
-plt.rc('mathtext',  fontset='dejavuserif')
-plt.rc('axes',      titlesize=16, labelsize=12, titleweight='semibold')
-plt.rc('xtick',     labelsize=10)
-plt.rc('ytick',     labelsize=10)
+# === CONFIG ===
+LOG_PATH = "logs/update_log.csv"
+LOCAL_MEMORIES_PATH = "logs/local_memories.json"
+GLOBAL_TRACE_PATH = "reconstructed_global_memory_trace_corrected.json"
+ONTOLOGY_ACCESS_PATH = "logs/ontology_access.json"
 
-BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+update_log = pd.read_csv(LOG_PATH)
 
-def sanitize_log_file(path):
-    with open(path, "r") as f:
-        lines = f.readlines()
+validated = update_log[
+    (update_log["event"] == "memory_update") &
+    (update_log["validated"].astype(str).str.upper() == "TRUE")
+]
 
-    # Fix header if it has tabs but data is comma-separated
-    if "\t" in lines[0] and "," in lines[1]:
-        lines[0] = lines[0].replace("\t", ",")
-        with open(path, "w") as f:
-            f.writelines(lines)
+validated["tick"] = validated["tick"].astype(int)
+max_tick = validated["tick"].max()
 
+memory_trace = []
+current_memory = {}
 
-def evaluate_semantic_coherence(log_dir=BASE):
-    import os
-    import json
-    import csv
+for t in range(max_tick + 1):
+    tick_updates = validated[validated["tick"] == t]
+    for _, row in tick_updates.iterrows():
+        current_memory[row["key"]] = row["value"]
+    memory_trace.append(current_memory.copy())
 
-    ontology_path = os.path.join(log_dir, "ontology_access.json")
-    log_path = os.path.join(log_dir, "update_log.csv")
+with open(GLOBAL_TRACE_PATH, "w") as f:
+    json.dump(memory_trace, f, indent=2)
 
-    if not os.path.exists(ontology_path):
-        raise FileNotFoundError("ontology_access.json not found in logs folder")
-    if not os.path.exists(log_path):
-        raise FileNotFoundError("update_log.csv not found in logs folder")
+print(f"[✓] Global memory trace reconstructed: {GLOBAL_TRACE_PATH}")
 
-    with open(ontology_path, "r") as f:
-        ontology_access = json.load(f)
-
-    failures = []
-    total_validated = 0
-
-    sanitize_log_file(log_path)
-    with open(log_path, newline="") as csvfile:
-        reader = csv.DictReader(csvfile)  # comma-delimited, don't override with \t
-        headers = reader.fieldnames
-        if headers is None or "event" not in headers:
-            raise ValueError(f"Expected 'event' in headers, but got: {headers}")
-
-        print("Detected headers:", headers)
-
-        for row in reader:
-            if not row:
-                continue
-            event = row.get("event", "").strip()
-            validated = row.get("validated", "").strip().upper()
-            if event == "memory_update" and validated == "TRUE":
-                total_validated += 1
-                agent_id = row.get("agent", "").strip()
-                key = row.get("key", "").strip()
-                prefix = key.split("@")[0]
-                allowed = ontology_access.get(agent_id, [])
-                if prefix not in allowed:
-                    failures.append({
-                        "tick": row.get("tick", "").strip(),
-                        "agent": agent_id,
-                        "key": key
-                    })
-
-    failed_count = len(failures)
-    score = 1 - failed_count / total_validated if total_validated else 1
-
-    return {
-        "total_validated_updates": total_validated,
-        "coherence_violations": failed_count,
-        "coherence_score": round(score, 3),
-        "failures": failures
-    }
-
-
-def evaluate_causal_isolation(log_dir=BASE):
-    ontology_path = os.path.join(log_dir, "ontology_access.json")
-    log_path = os.path.join(log_dir, "update_log.csv")
-
-    if not os.path.exists(ontology_path):
-        raise FileNotFoundError("ontology_access.json not found in logs folder")
-    if not os.path.exists(log_path):
-        raise FileNotFoundError("update_log.csv not found in logs folder")
-
-    with open(ontology_path, "r") as f:
-        ontology_access = json.load(f)
-
-    total_validated = 0
+# === THEOREM 1: Semantic Coherence ===
+def check_global_semantic_coherence(global_trace, allowed_prefixes):
     violations = []
+    total_checked = 0
+    for t, memory in enumerate(global_trace):
+        for key, value in memory.items():
+            total_checked += 1
+            prefix = key.split("@")[0] if "@" in key else None
+            if prefix not in allowed_prefixes:
+                violations.append((t, key, value))
+    return violations, total_checked
 
-    sanitize_log_file(log_path)
-    with open(log_path, newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if not row:
-                continue
-            event = row.get("event", "").strip().lower()
-            validated = row.get("validated", "").strip().upper()
-            if event == "memory_update" and validated == "TRUE":
-                total_validated += 1
-                agent_id = row.get("agent", "").strip()
-                key = row.get("key", "").strip()
-                prefix = key.split("@")[0]
-                allowed = ontology_access.get(agent_id, [])
-                if prefix not in allowed:
-                    violations.append({
-                        "tick": row.get("tick", "").strip(),
-                        "agent": agent_id,
-                        "key": key
-                    })
-
-    score = 1 - len(violations) / total_validated if total_validated else 1
-
-    return {
-        "total_validated_updates": total_validated,
-        "causal_violations": len(violations),
-        "isolation_score": round(score, 3),
-        "violations": violations
-    }
+# === THEOREM 3: Causal Isolation (only new keys per step) ===
+def check_causal_isolation(local_memories, slice_prefixes):
+    violations = []
+    total_checked = 0
+    for agent, memory_list in local_memories.items():
+        allowed = slice_prefixes.get(agent, [])
+        prev_keys = set()
+        for t, mem in enumerate(memory_list):
+            current_keys = set(mem.keys())
+            new_keys = current_keys - prev_keys
+            for key in new_keys:
+                total_checked += 1
+                if not any(key.startswith(prefix + "@") for prefix in allowed):
+                    violations.append((agent, t, key))
+            prev_keys = current_keys
+    return violations, total_checked
 
 
 if __name__ == "__main__":
-    print("Evaluating theorem compliance from current logs folder...\n")
+    # Load inputs
+    with open(GLOBAL_TRACE_PATH) as f:
+        global_trace = json.load(f)
 
-    print("Semantic Coherence:")
-    coh = evaluate_semantic_coherence()
-    print(json.dumps(coh, indent=2))
+    with open(LOCAL_MEMORIES_PATH) as f:
+        local_memories = json.load(f)
 
-    print("\nCausal Isolation:")
-    iso = evaluate_causal_isolation()
-    print(json.dumps(iso, indent=2))
+    with open(ONTOLOGY_ACCESS_PATH) as f:
+        slice_prefixes = json.load(f)
+    print(f"# agents: {len(local_memories)}")
+    print(f"# steps per agent: {[len(mem) for mem in local_memories.values()][:3]}  # sample")
+    print(f"# avg keys per snapshot (agent 0): {[len(m) for m in list(local_memories.values())[0]][:5]}  # first 5")
+
+
+    # Extract full set of ontology prefixes from all agents
+    all_allowed_prefixes = set()
+    for prefixes in slice_prefixes.values():
+        all_allowed_prefixes.update(prefixes)
+
+    print("\n[✓] Checking Theorem 1: Semantic Coherence")
+    t1_violations, t1_total = check_global_semantic_coherence(global_trace, all_allowed_prefixes)
+    print(f"Total violations: {len(t1_violations)} / {t1_total}")
+
+    if t1_violations:
+        print("Sample:", t1_violations[:5])
+
+    print("\n[✓] Checking Theorem 3: Causal Isolation")
+    t3_violations, t3_total = check_causal_isolation(local_memories, slice_prefixes)
+    print(f"Total violations: {len(t3_violations)} / {t3_total}")
+
+    if t3_violations:
+        print("Sample:", t3_violations[:5])

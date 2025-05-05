@@ -32,6 +32,11 @@ class RescueAgent(BaseAgent):
                 score = self.bid_score(zone)
                 bid_key = f"Bid@{zone}"
                 bid_val = f"{self.agent_id}:{score:.2f}"
+                import re
+                pattern = r".+?:-?\d+(\.\d+)?"
+                if not re.fullmatch(pattern, bid_val):
+                    print(f"[REGEX FAIL] {self.agent_id} bid value '{bid_val}' failed to match regex: {pattern}")
+
                 if self.memory.validate_and_update(bid_key, bid_val, context={"tick": tick, "agent_id": self.agent_id}):
                     self.global_store.add(bid_key, bid_val, tick, self.agent_id)
 

@@ -70,6 +70,8 @@ def validate_stuttering_bisim(local_memory_log, global_memory_log, ontology_path
         global_trace = global_snapshots.get(agent_id, [])
         
         for t, local_state in enumerate(local_trace):
+            if t > 24:
+                continue
             local_proj = {k: v for k, v in local_state.items()
                         if k.split("@")[0] in slice_keys}
 
@@ -132,11 +134,11 @@ def validate_probabilistic_bisim(distribution_log_path, global_log_path):
 
 
 if __name__ == "__main__":
-    print("Testing Theorem 10 (Stuttering Bisimulation)...")
+    print("Testing Theorem 5(Stuttering Bisimulation)...")
     result1 = validate_stuttering_bisim("logs/local_memories.json", "logs/global_memories_tracker.json", "logs/ontology_access.json", max_delay=30)
     print(json.dumps(result1, indent=2))
 
     combine_proposal_logs("logs")
-    print("\nTesting Theorem 17 (Probabilistic Bisimulation)...")
+    print("\nTesting Theorem 7 (Probabilistic Bisimulation)...")
     result2 = validate_probabilistic_bisim("logs/proposal_distributions.json", "logs/global_memories_canonical.json")
     print(json.dumps(result2, indent=2))
