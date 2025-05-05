@@ -3,7 +3,7 @@
 
 ## Overview
 This repository contains the reference implementation for the Semantic Fusion simulation 
-used in the paper "Semantic Fusion: Verifiable Decentralized Reasoning with Global Semantic Alignment".
+used in the paper "Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems".
 
 ## Requirements
 - Python 3.9 or higher
