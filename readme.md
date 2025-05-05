@@ -3,7 +3,7 @@
 
 ## Overview
 This repository contains the reference implementation for the Semantic Fusion simulation 
-used in the paper "Scoped Semantic Reasoning in Decentralized Agents: A Formal Framework and Reference Architecture".
+used in the paper "Semantic Fusion: Verifiable Decentralized Reasoning with Global Semantic Alignment".
 
 ## Requirements
 - Python 3.9 or higher
