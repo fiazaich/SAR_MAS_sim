@@ -47,6 +47,7 @@ used in the paper "Scoped Semantic Reasoning in Decentralized Agents: A Formal F
    - set ```comm_prob``` in config/run_mode.json to desired message probability
    - run the sim ```python -m main```
    - run tools/mem_converge.py
+   
    Once all per-comm_prob analyses are run:
    ```bash
    python tools/plot_alignment_tails.py
