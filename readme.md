@@ -75,10 +75,10 @@ used in the paper "Semantic Fusion: Verifiable Alignment in Decentralized Multi-
 - During startup the runner builds a prefix → subscribers map from each agent’s ontology slice, and `BaseAgent.broadcast` only iterates receivers whose slice contains the key.  
 - Candidate logs are emitted only for those scoped receivers, so communication metrics track the true number of semantic refreshes rather than full-network broadcasts.
 
-### Runtime fan-out analysis
-- Every broadcast now logs a single `fanout` event that records how many recipients were targeted under scoped delivery.  
-- You can either pass an existing log via `python tools/slice_scaling_keys.py --runtime_point 0.6:logs/update_log.csv --output runtime_scaling.pdf` or let the script sweep fan-out values directly with `python tools/slice_scaling_keys.py --run_simulations --fractions 0.2 0.6 1.0 --ticks 5 --seeds 3`.  
-- Each auto-run copies the resulting `logs/update_log.csv` into `logs/fanout_runs/` so the plot reflects true runtime fan-out rather than the synthetic combinatorial model, and `--seeds` lets you average multiple RNG seeds per fraction.
+### Synthetic fan-out analysis
+- To reproduce the Θ(d) slice-scaling experiment, run `python tools/slice_scaling_keys.py`.  
+- The script samples random slice assignments for each fan-out fraction and plots the expected message cost along with the ideal and broadcast baselines.  
+- Runtime scoped-delivery logs still include `fanout` entries (one per broadcast) if you want to inspect a specific run, but the published figure uses the synthetic study for consistency with the theory.
 
 ## Directory Structure
 - `agents/` – agent implementations 
