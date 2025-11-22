@@ -93,4 +93,18 @@ used in the paper "Semantic Fusion: Verifiable Alignment in Decentralized Multi-
 - `tools/` - all analysis and plotting tools   
 
 ## License
-MIT (or your preferred license)
+This codebase is released under the [MIT License](LICENSE).
+
+## Citation
+If you use this artifact or build on the Semantic Fusion simulator, please cite:
+
+> Sofiya Zaichyk. *Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems*. 2025.
+
+BibTeX:
+```bibtex
+@inproceedings{Zaichyk2025SemanticFusion,
+  author    = {Sofiya Zaichyk},
+  title     = {Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems},
+  year      = {2025}
+}
+```
