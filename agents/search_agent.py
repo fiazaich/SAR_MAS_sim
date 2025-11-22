@@ -15,9 +15,11 @@ class SearchAgent(BaseAgent):
     def assign_zones(self, zones):
         self.assigned_zones = zones
         if zones:
-           self.location = zones[0]          # start inside first zone
+            self.location = zones[0]          # start inside first zone
             # publish initial pos
-           self.memory.validate_and_update(f"AgentPos@{self.agent_id}", "0,0", context={"tick": 0})
+            if self.memory.validate_and_update(f"AgentPos@{self.agent_id}", "0,0", context={"tick": 0}):
+                if getattr(self, "global_store", None):
+                    self.global_store.add(f"AgentPos@{self.agent_id}", "0,0", 0, self.agent_id)
 
     def sample_survivor_status(self):
         distribution = {"detected": 0.3, "none": 0.7}
@@ -37,7 +39,10 @@ class SearchAgent(BaseAgent):
         zone = self.assigned_zones[self.last_zone_index]
         if self.location != zone:
             self.location = zone
-            self.memory.validate_and_update(f"AgentPos@{self.agent_id}", f"{zone.split('_')[0][1:]},{zone.split('_')[1]}", context={"tick": tick})
+            pos_value = f"{zone.split('_')[0][1:]},{zone.split('_')[1]}"
+            if self.memory.validate_and_update(f"AgentPos@{self.agent_id}", pos_value, context={"tick": tick}):
+                if getattr(self, "global_store", None):
+                    self.global_store.add(f"AgentPos@{self.agent_id}", pos_value, tick, self.agent_id)
 
         survivor_key = f"Survivor@{zone}"
         zone_status_key = f"ZoneStatus@{zone}"
@@ -60,6 +65,7 @@ class SearchAgent(BaseAgent):
                 await self.logger.log(tick, self.agent_id, "found_survivor", survivor_key, chosen)
 
         if self.memory.validate_and_update(zone_status_key, "searched", context={"tick": tick, "agent_id": self.agent_id}):
+            self.global_store.add(zone_status_key, "searched", tick, self.agent_id)
             await self.broadcast(agents, zone_status_key, "searched", tick)
             if self.logger:
                 await self.logger.log(tick, self.agent_id, "zone_status", zone_status_key, "searched")

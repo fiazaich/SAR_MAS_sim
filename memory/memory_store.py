@@ -10,6 +10,7 @@ class LocalMemory:
     def validate_and_update(self, key, value, context=None):
         in_scope = self.slice.is_in_scope(key)
         validated = self.slice.validates(key, value)
+        event_name = (context or {}).get("event", "memory_update")
         success = False
         
         if in_scope and not validated:
@@ -27,11 +28,11 @@ class LocalMemory:
             agent = context.get("agent_id", self.agent_id)
             import asyncio
             if asyncio.get_event_loop().is_running():
-                asyncio.create_task(self.logger.log(tick, agent, "memory_update", key, value, validated, in_scope))
+                asyncio.create_task(self.logger.log(tick, agent, event_name, key, value, validated, in_scope))
             else:
                 # fallback sync log if outside async context
                 import threading
-                threading.Thread(target=self.logger.log, args=(tick, agent, "memory_update", key, value, validated, in_scope)).start()
+                threading.Thread(target=self.logger.log, args=(tick, agent, event_name, key, value, validated, in_scope)).start()
 
         return success
 

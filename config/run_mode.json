@@ -1,9 +1,15 @@
-{"comm_prob": 1.0, 
-"fan_out": 1.0, 
-"seed": 123,
-"world_width": 10,
-"world_height": 10,
-"n_search": 10,
-"n_relay": 20,
-"n_rescue": 20,
-"duration": 100}
+{
+  "comm_prob": 1.0,
+  "fan_out": 1.0,
+  "seed": 123,
+  "world_width": 10,
+  "world_height": 10,
+  "n_search": 50,
+  "n_relay": 100,
+  "n_rescue": 100,
+  "duration": 100,
+  "bad_update": {
+    "interval": 0,
+    "ticks": []
+  }
+}

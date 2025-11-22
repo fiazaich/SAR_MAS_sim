@@ -3,6 +3,7 @@ import os
 import json
 import argparse
 import math, random
+from collections import defaultdict
 from ontology.slices import OntologySlice
 from memory.memory_store import LocalMemory
 from memory.global_memory_store import GlobalMemoryStore
@@ -73,6 +74,33 @@ def generate_fanout_slices(fan_out: float, seed: int = 42):
     ]
     return search_slices, rescue_slices, relay_slices
 
+
+def build_delivery_map(agents):
+    mapping = defaultdict(list)
+    for agent in agents:
+        for prefix in agent.slice.allowed_prefixes:
+            mapping[prefix].append(agent)
+    return mapping
+
+
+def inject_bad_update(all_agents, tick, rng=None):
+    """
+    Force a randomly selected agent to attempt an invalid memory update.
+    Validator should reject these updates, allowing us to assert correctness.
+    """
+    if not all_agents:
+        return False
+
+    rng = rng or random
+    agent = rng.choice(all_agents)
+    invalid_prefix = rng.choice(["Forbidden", "Corrupted", "InvalidKey"])
+    key = f"{invalid_prefix}@tick{tick}"
+    value = f"bad_payload_{rng.randint(1000, 9999)}"
+    context = {"tick": tick, "agent_id": agent.agent_id, "event": "bad_update"}
+
+    print(f"[INJECTION] {agent.agent_id} attempting invalid update {key}={value}")
+    return agent.memory.validate_and_update(key, value, context=context)
+
 async def main():
     global global_store, tracker
     logger = Logger(log_dir=os.path.join(os.path.dirname(__file__), "..", "logs"))
@@ -83,14 +111,30 @@ async def main():
                         help="Fraction of agents to share each prefix (0–1).")
     parser.add_argument("--drop", action="store_true", default=True,
                         help="Enable failure injection at tick 6 (default: true).")
+    parser.add_argument("--bad_interval", type=int, default=None,
+                        help="Inject a bad update every N ticks (0/None disables).")
+    parser.add_argument("--bad_ticks", type=int, nargs="*", default=None,
+                        help="Specific ticks that should receive a bad update injection.")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Override RNG seed (default from config).")
     args = parser.parse_args()
     cfg = json.load(open("config/run_mode.json"))
     print(f"[DEBUG] loaded config: {cfg}")
-    fan_out = cfg.get("fan_out", None)
-    seed    = cfg.get("seed",  42)
+    fan_out = args.fan_out if args.fan_out is not None else cfg.get("fan_out", None)
+    seed    = args.seed if args.seed is not None else cfg.get("seed",  42)
     comm_prob = cfg.get("comm_prob", 1.0) 
     base_agent.COMM_PROB = comm_prob
     ticks = args.ticks or TICKS
+    bad_update_cfg = cfg.get("bad_update", {})
+    cfg_interval = int(bad_update_cfg.get("interval", 0) or 0)
+    cfg_ticks = bad_update_cfg.get("ticks", [])
+    if isinstance(cfg_ticks, int):
+        cfg_ticks = [cfg_ticks]
+    elif not isinstance(cfg_ticks, (list, tuple, set)):
+        cfg_ticks = []
+    bad_update_interval = cfg_interval if args.bad_interval is None else max(0, args.bad_interval)
+    bad_update_ticks = cfg_ticks if args.bad_ticks is None else args.bad_ticks
+    bad_update_ticks = {int(t) for t in bad_update_ticks if t is not None}
 
     #add zones from gridworld
     
@@ -127,6 +171,7 @@ async def main():
     relay_agents  = [RelayAgent (f"relay{i+1}", relay_slices[i],  logger)
                      for i in range(N_RELAY)]
     all_agents    = search_agents + rescue_agents + relay_agents
+    base_agent.BaseAgent.register_delivery_map(build_delivery_map(all_agents))
     
     access_map = {
         agent.agent_id: sorted(agent.slice.allowed_prefixes)
@@ -181,6 +226,14 @@ async def main():
                     agent.tick = noop  # Disable the agent
                     if agent.logger:
                         await agent.logger.log(tick, agent.agent_id, "failure", "status", "agent_offline", validated=False, in_scope=True)
+
+        should_inject_bad = False
+        if bad_update_interval and bad_update_interval > 0 and tick % bad_update_interval == 0:
+            should_inject_bad = True
+        if tick in bad_update_ticks:
+            should_inject_bad = True
+        if should_inject_bad:
+            inject_bad_update(all_agents, tick, rng=random)
 
         await asyncio.gather(*(agent.tick(all_agents, tick) for agent in all_agents))
         # Snapshot memory after all updates

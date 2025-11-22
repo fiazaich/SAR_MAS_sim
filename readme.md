@@ -54,6 +54,32 @@ used in the paper "Semantic Fusion: Verifiable Alignment in Decentralized Multi-
    ```
    Note: running with higher ```comm_prob``` values induces little or no  message loss and, while the alignment curve is exponential, typically will have points rise above the bound due to violation of the i.i.d. message assumption.
 
+### Automated alignment-tail experiment
+- Instead of running `tools/mem_converge.py` manually for each delivery probability, use `tools/alignment_tail_with_fits.py` to launch the runs and plot the survival curves with exponential fits. Example:
+  ```bash
+  python tools/alignment_tail_with_fits.py \
+    --sim rho0.2:0.2 \
+    --sim rho0.5:0.5 \
+    --sim rho0.8:0.8 \
+    --ticks 100 \
+    --output alignment_tail_with_fits.pdf
+  ```
+- Each `--sim LABEL:COMM_PROB` call rewrites `config/run_mode.json`, runs the sim, saves the logs under `logs/alignment_runs/LABEL/`, and then restores your config. You can also reuse existing runs with `--run LABEL:/path/to/dir`.
+
+### Injecting invalid updates
+- Set `bad_update.interval` in `config/run_mode.json` to a positive integer to inject an invalid update every N ticks.  
+- Alternatively, list exact tick numbers under `bad_update.ticks` to target specific rounds.  
+- You can also override these settings via CLI with `python -m main --bad_interval 5` or `python -m main --bad_ticks 8 17`.
+
+### Scoped delivery (prefix-indexed push)
+- During startup the runner builds a prefix → subscribers map from each agent’s ontology slice, and `BaseAgent.broadcast` only iterates receivers whose slice contains the key.  
+- Candidate logs are emitted only for those scoped receivers, so communication metrics track the true number of semantic refreshes rather than full-network broadcasts.
+
+### Runtime fan-out analysis
+- Every broadcast now logs a single `fanout` event that records how many recipients were targeted under scoped delivery.  
+- You can either pass an existing log via `python tools/slice_scaling_keys.py --runtime_point 0.6:logs/update_log.csv --output runtime_scaling.pdf` or let the script sweep fan-out values directly with `python tools/slice_scaling_keys.py --run_simulations --fractions 0.2 0.6 1.0 --ticks 5 --seeds 3`.  
+- Each auto-run copies the resulting `logs/update_log.csv` into `logs/fanout_runs/` so the plot reflects true runtime fan-out rather than the synthetic combinatorial model, and `--seeds` lets you average multiple RNG seeds per fraction.
+
 ## Directory Structure
 - `agents/` – agent implementations 
 - `config/` - simulation configuration

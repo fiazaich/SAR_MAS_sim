@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
+import os
+import sys
 import numpy as np
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 from simulation.runner import generate_fanout_slices
 
 # === CONFIGURATION ===

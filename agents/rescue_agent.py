@@ -62,7 +62,9 @@ class RescueAgent(BaseAgent):
             if self.location != zone:
                 self.move_to(zone)   # publishes AgentPos internally
                 c = gw.WORLD.coord(zone)
-                self.memory.validate_and_update(f"AgentPos@{self.agent_id}", f"{c.x},{c.y}", context={"tick": tick})
+                if self.memory.validate_and_update(f"AgentPos@{self.agent_id}", f"{c.x},{c.y}", context={"tick": tick}):
+                    if getattr(self, "global_store", None):
+                        self.global_store.add(f"AgentPos@{self.agent_id}", f"{c.x},{c.y}", tick, self.agent_id)
                 if self.logger:
                     await self.logger.log(tick, self.agent_id, "move", f"Relocate@{zone}", "moving")
 

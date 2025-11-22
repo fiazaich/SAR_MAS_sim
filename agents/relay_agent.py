@@ -18,7 +18,9 @@ class RelayAgent(BaseAgent):
                 # publish updated position
         c = gw.WORLD.coord(zone)
         x, y = c.x, c.y
-        self.memory.validate_and_update(f"AgentPos@{self.agent_id}", f"{x},{y}", context={"tick": -1})
+        if self.memory.validate_and_update(f"AgentPos@{self.agent_id}", f"{x},{y}", context={"tick": -1}):
+            if getattr(self, "global_store", None):
+                self.global_store.add(f"AgentPos@{self.agent_id}", f"{x},{y}", -1, self.agent_id)
 
     def get_active_claims(self, agents):
         active_claims = {}
