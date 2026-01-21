@@ -102,9 +102,13 @@ If you use this artifact or build on the Semantic Fusion simulator, please cite:
 
 BibTeX:
 ```bibtex
-@article{Zaichyk2025SemanticFusion,
-  author    = {Sofiya Zaichyk},
-  title     = {Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems},
-  year      = {2025}
+@misc{zaichyk2026semanticfusionverifiablealignment,
+      title={Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems}, 
+      author={Sofiya Zaichyk},
+      year={2026},
+      eprint={2601.12580},
+      archivePrefix={arXiv},
+      primaryClass={cs.MA},
+      url={https://arxiv.org/abs/2601.12580}, 
 }
 ```
