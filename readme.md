@@ -102,13 +102,23 @@ If you use this artifact or build on the Semantic Fusion simulator, please cite:
 
 BibTeX:
 ```bibtex
-@misc{zaichyk2026semanticfusionverifiablealignment,
-      title={Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems}, 
-      author={Sofiya Zaichyk},
-      year={2026},
-      eprint={2601.12580},
-      archivePrefix={arXiv},
-      primaryClass={cs.MA},
-      url={https://arxiv.org/abs/2601.12580}, 
+@article{10.1145/3797042,
+author = {Zaichyk, Sofiya C},
+title = {Semantic Fusion: Verifiable Alignment in Decentralized Multi-Agent Systems},
+year = {2026},
+issue_date = {September 2026},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {21},
+number = {3},
+issn = {1556-4665},
+url = {https://doi.org/10.1145/3797042},
+doi = {10.1145/3797042},
+journal = {ACM Trans. Auton. Adapt. Syst.},
+month = jun,
+articleno = {29},
+numpages = {29},
+keywords = {Multi-Agent Systems, Decentralized Reasoning, Shared Semantic Memory, Bisimulation, Formal Verification, Ontology-Scoped Reasoning, Probabilistic Semantics}
+}601.12580}, 
 }
 ```
